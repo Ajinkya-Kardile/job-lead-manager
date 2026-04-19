@@ -59,7 +59,48 @@ export default function DraftEditor({lead, onSend, onReject}: DraftEditorProps) 
         }
     };
 
+    // --- Dynamic Highlighting Logic ---
+    const getHighlightedBody = () => {
+        // Escape HTML to prevent injection
+        let html = body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        const terms = [];
+        if (useRecruiterName && lead.name && lead.name !== 'Unknown') terms.push(lead.name);
+        else terms.push('Hiring Team');
+
+        if (useCompanyName && lead.company && lead.company !== 'Unknown') terms.push(lead.company);
+        else terms.push('your company');
+
+        if (useJobRole && lead.role) terms.push(lead.role);
+        else terms.push('open');
+
+        // Remove duplicates and sort by length descending to prevent partial replacements
+        const uniqueTerms = Array.from(new Set(terms)).sort((a, b) => b.length - a.length);
+
+        uniqueTerms.forEach(term => {
+            if (term.length > 2) {
+                const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escapedTerm})`, 'g');
+                // Wrap found terms in an indigo highlight
+                html = html.replace(regex, `<mark class="bg-indigo-500/40 text-indigo-100 rounded-sm px-0.5">$1</mark>`);
+            }
+        });
+
+        if (html.endsWith('\n')) html += '<br/>'; // Maintain scroll height accurately
+        return html;
+    };
+
+    // Sync scroll between the invisible textarea and the highlight backdrop
+    const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+        const backdrop = e.currentTarget.previousElementSibling as HTMLDivElement;
+        if (backdrop) {
+            backdrop.scrollTop = e.currentTarget.scrollTop;
+        }
+    };
+
     const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-gray-600";
+    const textAreaLayoutClass = "absolute inset-0 w-full h-full p-4 text-sm leading-relaxed whitespace-pre-wrap break-words";
+
     const disableActions = isSending || isRejecting;
 
     return (
@@ -110,11 +151,26 @@ export default function DraftEditor({lead, onSend, onReject}: DraftEditorProps) 
                 </div>
             </div>
 
-            {/* Editor Body */}
-            <div className="flex-1 flex flex-col min-h-0">
-                <textarea value={body} onChange={e => setBody(e.target.value)} disabled={disableActions}
-                          className={`flex-1 resize-none p-4 custom-scrollbar leading-relaxed ${inputClass} disabled:opacity-75`}
-                          placeholder="Write your cover letter here..."/>
+            {/* Editor Body (with Highlight Overlay Trick) */}
+            <div
+                className="flex-1 flex flex-col min-h-0 relative bg-black/20 border border-white/10 rounded-lg overflow-hidden focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                {/* Highlight Backdrop */}
+                <div
+                    className={`${textAreaLayoutClass} text-gray-200 pointer-events-none overflow-y-auto custom-scrollbar`}
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={{__html: getHighlightedBody()}}
+                />
+
+                {/* Actual Editable Textarea */}
+                <textarea
+                    value={body}
+                    onChange={e => setBody(e.target.value)}
+                    onScroll={handleScroll}
+                    disabled={disableActions}
+                    className={`${textAreaLayoutClass} bg-transparent text-transparent caret-white outline-none resize-none custom-scrollbar disabled:opacity-75`}
+                    spellCheck="false"
+                    placeholder="Write your cover letter here..."
+                />
             </div>
 
             {/* Footer / Send Action */}
