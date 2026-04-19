@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
-import { Send, Loader2, Settings2 } from 'lucide-react';
-import { JobLead } from '@/types';
-import { generateSubject, generateTemplate } from '@/utils/mailTemplate';
+import React, {useState} from 'react';
+import {Send, Loader2, Settings2} from 'lucide-react';
+import {JobLead} from '@/types';
+import {generateSubject, generateTemplate} from '@/utils/mailTemplate';
 
 interface DraftEditorProps {
     lead: JobLead;
-    onSend: (id: number) => void;
+    onSend: (id: number, payload: { to: string, subject: string, body: string }) => Promise<void>;
 }
 
-export default function DraftEditor({ lead, onSend }: DraftEditorProps) {
+export default function DraftEditor({lead, onSend}: DraftEditorProps) {
     const [isSending, setIsSending] = useState(false);
 
     const [useRecruiterName, setUseRecruiterName] = useState(true);
     const [useCompanyName, setUseCompanyName] = useState(true);
     const [useJobRole, setUseJobRole] = useState(true);
 
-    // Uses utility functions directly now!
     const [to, setTo] = useState(lead.email);
     const [subject, setSubject] = useState(generateSubject(lead, true));
     const [body, setBody] = useState(generateTemplate(lead, true, true, true));
@@ -36,12 +35,16 @@ export default function DraftEditor({ lead, onSend }: DraftEditorProps) {
         setBody(generateTemplate(lead, useRecruiterName, useCompanyName, checked));
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         setIsSending(true);
-        setTimeout(() => {
-            onSend(lead.id);
+        try {
+            // Trigger the real API call in the parent
+            await onSend(lead.id, {to, subject, body});
+        } catch (error) {
+            console.error("Error during submission:", error);
+        } finally {
             setIsSending(false);
-        }, 800);
+        }
     };
 
     const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-gray-600";
@@ -52,30 +55,42 @@ export default function DraftEditor({ lead, onSend }: DraftEditorProps) {
             <div className="space-y-2.5 shrink-0">
                 <div className="flex items-center">
                     <label className="w-12 text-xs font-semibold text-gray-400 uppercase tracking-wider">To</label>
-                    <input type="email" value={to} onChange={e => setTo(e.target.value)} className={inputClass} placeholder="hr@company.com" />
+                    <input type="email" value={to} onChange={e => setTo(e.target.value)} className={inputClass}
+                           placeholder="hr@company.com"/>
                 </div>
                 <div className="flex items-center">
                     <label className="w-12 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sub</label>
-                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={inputClass} placeholder="Application Subject" />
+                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={inputClass}
+                           placeholder="Application Subject"/>
                 </div>
             </div>
 
             {/* Template Options Bar */}
-            <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3 xl:gap-5 px-1 pt-1 pb-1 border-t border-white/5 mt-1 shrink-0">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
-                    <Settings2 size={14} /> Template Settings
+            <div
+                className="flex flex-col xl:flex-row items-start xl:items-center gap-3 xl:gap-5 px-1 pt-1 pb-1 border-t border-white/5 mt-1 shrink-0">
+                <div
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                    <Settings2 size={14}/> Template Settings
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
-                        <input type="checkbox" checked={useRecruiterName} onChange={e => handleNameToggle(e.target.checked)} className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer" />
+                    <label
+                        className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input type="checkbox" checked={useRecruiterName}
+                               onChange={e => handleNameToggle(e.target.checked)}
+                               className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"/>
                         Include Name
                     </label>
-                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
-                        <input type="checkbox" checked={useCompanyName} onChange={e => handleCompanyToggle(e.target.checked)} className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer" />
+                    <label
+                        className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input type="checkbox" checked={useCompanyName}
+                               onChange={e => handleCompanyToggle(e.target.checked)}
+                               className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"/>
                         Include Company
                     </label>
-                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
-                        <input type="checkbox" checked={useJobRole} onChange={e => handleRoleToggle(e.target.checked)} className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer" />
+                    <label
+                        className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input type="checkbox" checked={useJobRole} onChange={e => handleRoleToggle(e.target.checked)}
+                               className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"/>
                         Include Role
                     </label>
                 </div>
@@ -83,7 +98,9 @@ export default function DraftEditor({ lead, onSend }: DraftEditorProps) {
 
             {/* Editor Body */}
             <div className="flex-1 flex flex-col min-h-0">
-                <textarea value={body} onChange={e => setBody(e.target.value)} className={`flex-1 resize-none p-4 custom-scrollbar leading-relaxed ${inputClass}`} placeholder="Write your cover letter here..." />
+                <textarea value={body} onChange={e => setBody(e.target.value)}
+                          className={`flex-1 resize-none p-4 custom-scrollbar leading-relaxed ${inputClass}`}
+                          placeholder="Write your cover letter here..."/>
             </div>
 
             {/* Footer / Send Action */}
@@ -91,8 +108,9 @@ export default function DraftEditor({ lead, onSend }: DraftEditorProps) {
                 <div className="text-xs text-gray-500">
                     * Resume.pdf will be automatically attached by the backend.
                 </div>
-                <button onClick={handleSend} disabled={isSending} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20">
-                    {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                <button onClick={handleSend} disabled={isSending}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20">
+                    {isSending ? <Loader2 size={16} className="animate-spin"/> : <Send size={16}/>}
                     {isSending ? 'Sending...' : 'Send Application'}
                 </button>
             </div>

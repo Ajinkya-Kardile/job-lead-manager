@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin, Clock, Inbox, Building, User } from 'lucide-react';
-import { JobLead } from '../types';
+import { JobLead } from '@/types';
 
 interface JobDetailsProps {
     selectedLead: JobLead | null;

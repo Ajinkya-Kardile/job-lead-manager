@@ -1,75 +1,89 @@
 'use client';
 
-import React, {useState} from 'react';
-import {Send} from 'lucide-react';
+import React, {useState, useEffect} from 'react';
+import {Send, Loader2} from 'lucide-react';
 import {JobLead} from '@/types';
 import LeadQueue from '../components/LeadQueue';
 import JobDetails from '../components/JobDetails';
 import DraftEditor from '../components/DraftEditor';
 
-const INITIAL_LEADS: JobLead[] = [
-    {
-        id: 1,
-        name: 'Chitra Sharma',
-        email: 'Chitra.Sharma@TalentOla.com',
-        role: 'Senior SDET',
-        location: 'Pune',
-        company: 'Talentola',
-        status: 1,
-        postedAt: '2026-04-19 09:40',
-        content: 'We are looking for an experienced Senior Software Development Engineer in Test (SDET) with strong expertise in Selenium, TestNG, Cucumber, Rest Assured & CI/CD pipelines.\n\nYou will be responsible for building automated test suites, analyzing system performance, and ensuring the delivery of high-quality software.'
-    },
-    {
-        id: 2,
-        name: 'Dhruv Gupta',
-        email: 'dhruvgupta@albireorecruiters.in',
-        role: 'Java Developer',
-        location: 'INDIA',
-        company: 'Albireorecruiters',
-        status: 1,
-        postedAt: '2026-04-19 09:41',
-        content: '🚨 🔥 PAN-INDIA TECH MEGA DRIVE: Java/Microservices/Snowflake/PLSQL/Big Data/DevOps | 5–15 Yrs 🔥🚨\n\nTech Hiring Drive Across Multiple Locations: Hyderabad, Pune, Bangalore.\n\nWe are seeking senior backend engineers to help scale our distributed systems and build highly concurrent applications.'
-    },
-    {
-        id: 3,
-        name: 'Avantika Virdikar',
-        email: 'swiftavantika14@gmail.com',
-        role: 'Java Full-Stack Developer',
-        location: 'Pune',
-        company: 'Unknown',
-        status: 1,
-        postedAt: '2026-04-19 09:41',
-        content: '🚀 Hiring: Java Full-Stack Developer | Pune (On-site)\n\nWe are looking for a Java Full-Stack Developer with 1–2 years of experience to work on a scalable SaaS platform. Offered CTC : 4 LPA - 6 LPA.\n\nMandatory: Experience in ERP / CRM / SaaS products, Java 17+, Spring Boot, and modern frontend frameworks.'
-    }
-];
-
 export default function JobApplicationManager() {
-    const [leads, setLeads] = useState<JobLead[]>(INITIAL_LEADS);
+    const [leads, setLeads] = useState<JobLead[]>([]);
     const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 1. Fetching Leads API
+    useEffect(() => {
+        const fetchLeads = async () => {
+            try {
+                // Adjust the URL if your Spring Boot is running on a different port/host
+                const response = await fetch('http://localhost:8080/api/leads/pending');
+                if (response.ok) {
+                    const data = await response.json();
+                    setLeads(data);
+                } else {
+                    console.error('Failed to fetch leads');
+                }
+            } catch (error) {
+                console.error('Error fetching leads:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLeads();
+    }, []);
 
     const pendingLeads = leads.filter(l => l.status === 1);
     const activeLeadId = selectedLeadId ?? (pendingLeads.length > 0 ? pendingLeads[0].id : null);
     const selectedLead = leads.find(l => l.id === activeLeadId) || null;
 
-    const handleSendApplication = (leadId: number) => {
-        const currentIndex = pendingLeads.findIndex(l => l.id === leadId);
-        let nextLeadId = null;
+    // 2. Dispatching Application API
+    const handleSendApplication = async (leadId: number, payload: { to: string, subject: string, body: string }) => {
+        try {
+            // Dispatch payload to Spring Boot POST endpoint
+            const response = await fetch('http://localhost:8080/api/leads/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: leadId, ...payload})
+            });
 
-        if (currentIndex !== -1 && currentIndex + 1 < pendingLeads.length) {
-            nextLeadId = pendingLeads[currentIndex + 1].id;
-        } else {
-            const fallback = pendingLeads.find(l => l.id !== leadId);
-            if (fallback) nextLeadId = fallback.id;
+            if (response.ok) {
+                const currentIndex = pendingLeads.findIndex(l => l.id === leadId);
+                let nextLeadId = null;
+
+                if (currentIndex !== -1 && currentIndex + 1 < pendingLeads.length) {
+                    nextLeadId = pendingLeads[currentIndex + 1].id;
+                } else {
+                    const fallback = pendingLeads.find(l => l.id !== leadId);
+                    if (fallback) nextLeadId = fallback.id;
+                }
+
+                // Optimistically update UI
+                setLeads(prev => prev.map(lead =>
+                    lead.id === leadId ? {...lead, status: 0} : lead
+                ));
+
+                setSelectedLeadId(nextLeadId);
+            } else {
+                console.error('Failed to send the application');
+            }
+        } catch (error) {
+            console.error('Error sending the application:', error);
         }
-
-        setLeads(prev => prev.map(lead =>
-            lead.id === leadId ? {...lead, status: 0} : lead
-        ));
-
-        setSelectedLeadId(nextLeadId);
     };
 
     const glassPane = "bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-y-auto flex flex-col custom-scrollbar shadow-2xl";
+
+    // Loading State UI
+    if (isLoading) {
+        return (
+            <div className="h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-indigo-500 gap-4">
+                <Loader2 className="animate-spin" size={40}/>
+                <p className="text-gray-400 text-sm font-medium tracking-wide">Loading Lead Queue...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="h-screen bg-[#0a0a0a] text-gray-100 p-4 lg:p-6 flex flex-col gap-6 font-sans overflow-hidden">
