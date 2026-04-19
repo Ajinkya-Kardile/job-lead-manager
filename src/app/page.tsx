@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2, User } from 'lucide-react';
+import { Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2, User, Settings2 } from 'lucide-react';
 
 // --- Data Models ---
 interface JobLead {
@@ -21,33 +21,13 @@ const INITIAL_LEADS: JobLead[] = [
     {
         id: 1,
         name: 'Chitra Sharma',
-        email: 'head@spenterprises.cloud',
+        email: 'Chitra.Sharma@TalentOla.com',
         role: 'Senior SDET',
         location: 'Pune',
         company: 'Talentola',
         status: 1,
         postedAt: '2026-04-19 09:40',
-        content: 'We’re #Hiring in Pune | Azure DevOps Developer & Java Developer\n' +
-            ' \n' +
-            ' We’re looking for experienced tech professionals ready to take on exciting opportunities and work on impactful projects. If you’re looking for your next move, we’d love to connect.\n' +
-            ' \n' +
-            ' 🔹 Open Positions:\n' +
-            ' Azure DevOps Developer\n' +
-            ' ✔ Experience: 4+ Years\n' +
-            ' 💰 Salary: ₹12 LPA – ₹18 LPA\n' +
-            ' Java Developer\n' +
-            ' ✔ Experience: 4–6 Years\n' +
-            ' 💰 Salary: ₹12 LPA – ₹15 LPA\n' +
-            ' 📍 Location: Pune\n' +
-            ' \n' +
-            ' 📩 Send your CV to: head@spenterprises.cloud\n' +
-            ' \n' +
-            ' 📞 Contact: +91 8263814071\n' +
-            ' \n' +
-            ' Know someone who fits? Tag them or share this post.\n' +
-            ' \n' +
-            ' Charges Apply.\n' +
-            ' #WeAreHiring #AzureDevOps #AzureDevOpsJobs #JavaDeveloper #JavaJobs #DevOpsEngineer #HiringNow'
+        content: 'We are looking for an experienced Senior Software Development Engineer in Test (SDET) with strong expertise in Selenium, TestNG, Cucumber, Rest Assured & CI/CD pipelines.\n\nYou will be responsible for building automated test suites, analyzing system performance, and ensuring the delivery of high-quality software.'
     },
     {
         id: 2,
@@ -262,15 +242,53 @@ function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => 
     const [body, setBody] = useState('');
     const [isSending, setIsSending] = useState(false);
 
+    // Toggles for dynamic generation
+    const [useRecruiterName, setUseRecruiterName] = useState(true);
+    const [useCompanyName, setUseCompanyName] = useState(true);
+    const [useJobRole, setUseJobRole] = useState(true);
+
+    // Helper to generate the Subject string
+    const generateSubject = (includeRole: boolean) => {
+        return (includeRole && lead.role) ? `Application for ${lead.role} position` : `Job Application`;
+    };
+
+    // Helper to generate the Body string
+    const generateTemplate = (includeName: boolean, includeCompany: boolean, includeRole: boolean) => {
+        const hrName = (includeName && lead.name && lead.name !== 'Unknown') ? lead.name : 'Hiring Team';
+        const companyName = (includeCompany && lead.company && lead.company !== 'Unknown') ? lead.company : 'your company';
+        const roleName = (includeRole && lead.role) ? lead.role : 'open';
+
+        return `Hi ${hrName},\n\nI am writing to express my interest in the ${roleName} position at ${companyName}. As a developer based in Pune specializing in Java 17+, Spring Boot, and scalable systems, I believe I would be a strong fit for your team. I recently built a real-time AI-powered application named Talentiv, and I am eager to bring similar problem-solving skills to your engineering department.\n\nPlease find my resume attached.\n\nBest regards,\nAjinkya Kardile`;
+    };
+
     // Re-run template generation when a new lead is selected
     useEffect(() => {
-        const hrName = lead.name && lead.name !== 'Unknown' ? lead.name : 'Hiring Team';
-        const companyName = lead.company && lead.company !== 'Unknown' ? lead.company : 'your company';
+        // Reset toggles to true for new leads
+        setUseRecruiterName(true);
+        setUseCompanyName(true);
+        setUseJobRole(true);
 
         setTo(lead.email);
-        setSubject(`Application for ${lead.role} position`);
-        setBody(`Hi ${hrName},\n\nI am writing to express my interest in the ${lead.role} position at ${companyName}. As a developer based in Pune specializing in Java 17+, Spring Boot, and scalable systems, I believe I would be a strong fit for your team. I recently built a real-time AI-powered application named Talentiv, and I am eager to bring similar problem-solving skills to your engineering department.\n\nPlease find my resume attached.\n\nBest regards,\nAjinkya Kardile`);
+        setSubject(generateSubject(true));
+        setBody(generateTemplate(true, true, true));
     }, [lead]);
+
+    // Handle toggle changes
+    const handleNameToggle = (checked: boolean) => {
+        setUseRecruiterName(checked);
+        setBody(generateTemplate(checked, useCompanyName, useJobRole));
+    };
+
+    const handleCompanyToggle = (checked: boolean) => {
+        setUseCompanyName(checked);
+        setBody(generateTemplate(useRecruiterName, checked, useJobRole));
+    };
+
+    const handleRoleToggle = (checked: boolean) => {
+        setUseJobRole(checked);
+        setSubject(generateSubject(checked));
+        setBody(generateTemplate(useRecruiterName, useCompanyName, checked));
+    };
 
     const handleSend = () => {
         setIsSending(true);
@@ -281,20 +299,56 @@ function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => 
         }, 800);
     };
 
-    const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-gray-600";
+    const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-gray-600";
 
     return (
-        <div className="flex flex-col h-full gap-4">
+        <div className="flex flex-col h-full gap-3">
 
             {/* Form Fields */}
-            <div className="space-y-3 shrink-0">
+            <div className="space-y-2.5 shrink-0">
                 <div className="flex items-center">
-                    <label className="w-16 text-xs font-semibold text-gray-400 uppercase tracking-wider">To</label>
+                    <label className="w-12 text-xs font-semibold text-gray-400 uppercase tracking-wider">To</label>
                     <input type="email" value={to} onChange={e => setTo(e.target.value)} className={inputClass} placeholder="hr@company.com" />
                 </div>
                 <div className="flex items-center">
-                    <label className="w-16 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sub</label>
+                    <label className="w-12 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sub</label>
                     <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={inputClass} placeholder="Application Subject" />
+                </div>
+            </div>
+
+            {/* Template Options Bar */}
+            <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3 xl:gap-5 px-1 pt-1 pb-1 border-t border-white/5 mt-1 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                    <Settings2 size={14} /> Template Settings
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={useRecruiterName}
+                            onChange={e => handleNameToggle(e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
+                        />
+                        Include Name
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={useCompanyName}
+                            onChange={e => handleCompanyToggle(e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
+                        />
+                        Include Company
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={useJobRole}
+                            onChange={e => handleRoleToggle(e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
+                        />
+                        Include Role
+                    </label>
                 </div>
             </div>
 
@@ -309,14 +363,14 @@ function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => 
             </div>
 
             {/* Footer / Send Action */}
-            <div className="shrink-0 pt-2 flex items-center justify-between border-t border-white/10 mt-2">
+            <div className="shrink-0 pt-2 flex items-center justify-between border-t border-white/10 mt-1">
                 <div className="text-xs text-gray-500">
                     * Resume.pdf will be automatically attached by the backend.
                 </div>
                 <button
                     onClick={handleSend}
                     disabled={isSending}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20"
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20"
                 >
                     {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     {isSending ? 'Sending...' : 'Send Application'}
