@@ -50,7 +50,12 @@ export default function LeadQueue({leads, activeLeadId, onSelectLead}: LeadQueue
                 <MapPin size={12}/> {lead.location}
               </span>
                             <span className="flex items-center gap-1">
-                <Clock size={12}/> {lead.postedAt.split(' ')[1]}
+                <Clock size={12}/> {new Date(lead.postedAt).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
               </span>
                         </div>
                     </div>

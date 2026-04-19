@@ -34,7 +34,10 @@ export default function JobDetails({selectedLead}: JobDetailsProps) {
                             <span
                                 className="bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5 flex items-center gap-1.5">
                 <Clock size={14} className="text-gray-500"/>
-                Posted: {selectedLead.postedAt}
+                Posted: {new Date(selectedLead.postedAt).toLocaleString('en-US', {
+                                dateStyle: 'medium',
+                                timeStyle: 'short'
+                            })}
               </span>
                         </div>
                     </div>
