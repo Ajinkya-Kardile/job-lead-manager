@@ -81,15 +81,35 @@ export default function JobApplicationManager() {
     const pendingLeads = leads.filter(l => l.status === 1);
     const selectedLead = leads.find(l => l.id === selectedLeadId) || null;
 
+    // Auto-select first pending lead on initial load or if none is selected
+    useEffect(() => {
+        if (selectedLeadId === null && pendingLeads.length > 0) {
+            setSelectedLeadId(pendingLeads[0].id);
+        }
+    }, [pendingLeads, selectedLeadId]);
+
     // Glassmorphism styling utility
     const glassPane = "bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-y-auto flex flex-col custom-scrollbar shadow-2xl";
 
     const handleSendApplication = (leadId: number) => {
+        // Find next lead in the queue to prevent UI flicker
+        const currentIndex = pendingLeads.findIndex(l => l.id === leadId);
+        let nextLeadId = null;
+
+        if (currentIndex !== -1 && currentIndex + 1 < pendingLeads.length) {
+            nextLeadId = pendingLeads[currentIndex + 1].id;
+        } else {
+            // Fallback to the first available lead that isn't the one we just sent
+            const fallback = pendingLeads.find(l => l.id !== leadId);
+            if (fallback) nextLeadId = fallback.id;
+        }
+
         // In real app: POST /api/leads/send -> then update UI
         setLeads(prev => prev.map(lead =>
             lead.id === leadId ? { ...lead, status: 0 } : lead
         ));
-        setSelectedLeadId(null); // Clear selection after sending
+
+        setSelectedLeadId(nextLeadId); // Auto-select the next lead
     };
 
     return (
