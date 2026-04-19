@@ -28,7 +28,7 @@ export default function JobApplicationManager() {
                 }
             } catch (err) {
                 console.error('Error fetching leads:', err);
-                setError('Could not connect to the backend server. Is Spring Boot running?');
+                setError('Could not connect to the backend server.');
             } finally {
                 setIsLoading(false);
             }
@@ -116,19 +116,7 @@ export default function JobApplicationManager() {
                 </div>
                 <h2 className="text-xl font-bold text-white">Connection Error</h2>
                 <p className="text-sm max-w-md leading-relaxed">{error}</p>
-                <div
-                    className="mt-4 text-xs text-gray-500 bg-white/5 p-4 rounded-xl border border-white/10 text-left space-y-2">
-                    <p><strong>Troubleshooting:</strong></p>
-                    <ul className="list-disc pl-4 space-y-1">
-                        <li>Ensure your Spring Boot backend is running on <code
-                            className="bg-black/30 px-1 py-0.5 rounded">localhost:8080</code>.
-                        </li>
-                        <li>Ensure your Spring Boot Controller has the <code
-                            className="bg-black/30 px-1 py-0.5 rounded">@CrossOrigin</code> annotation to allow requests
-                            from port 3000.
-                        </li>
-                    </ul>
-                </div>
+
             </div>
         );
     }
