@@ -59,14 +59,11 @@ export default function JobApplicationManager() {
 
     // Derived state
     const pendingLeads = leads.filter(l => l.status === 1);
-    const selectedLead = leads.find(l => l.id === selectedLeadId) || null;
 
-    // Auto-select first pending lead on initial load or if none is selected
-    useEffect(() => {
-        if (selectedLeadId === null && pendingLeads.length > 0) {
-            setSelectedLeadId(pendingLeads[0].id);
-        }
-    }, [pendingLeads, selectedLeadId]);
+    // Derive the active lead during render instead of using a useEffect.
+    // If no lead is manually selected, fallback to the first pending lead.
+    const activeLeadId = selectedLeadId ?? (pendingLeads.length > 0 ? pendingLeads[0].id : null);
+    const selectedLead = leads.find(l => l.id === activeLeadId) || null;
 
     // Glassmorphism styling utility
     const glassPane = "bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-y-auto flex flex-col custom-scrollbar shadow-2xl";
@@ -139,7 +136,7 @@ export default function JobApplicationManager() {
                                 className={`
                   p-4 rounded-xl border transition-all duration-200 cursor-pointer
                   ${lead.status === 0 ? 'opacity-50 border-white/5 bg-transparent cursor-default' :
-                                    selectedLeadId === lead.id ? 'border-indigo-500/50 bg-indigo-500/10 shadow-lg shadow-indigo-500/5' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'}
+                                    activeLeadId === lead.id ? 'border-indigo-500/50 bg-indigo-500/10 shadow-lg shadow-indigo-500/5' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'}
                 `}
                             >
                                 <div className="flex justify-between items-start mb-2">
@@ -222,7 +219,8 @@ export default function JobApplicationManager() {
                     </div>
 
                     {selectedLead ? (
-                        <DraftEditor lead={selectedLead} onSend={handleSendApplication} />
+                        /* By passing the selectedLead.id as the 'key', React will unmount and completely remount this component with fresh initial state every time the lead changes! */
+                        <DraftEditor key={selectedLead.id} lead={selectedLead} onSend={handleSendApplication} />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
                             <p>Awaiting selection...</p>
@@ -237,9 +235,6 @@ export default function JobApplicationManager() {
 
 // --- Sub-Component: Email Draft Editor ---
 function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => void }) {
-    const [to, setTo] = useState('');
-    const [subject, setSubject] = useState('');
-    const [body, setBody] = useState('');
     const [isSending, setIsSending] = useState(false);
 
     // Toggles for dynamic generation
@@ -261,17 +256,11 @@ function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => 
         return `Hi ${hrName},\n\nI am writing to express my interest in the ${roleName} position at ${companyName}. As a developer based in Pune specializing in Java 17+, Spring Boot, and scalable systems, I believe I would be a strong fit for your team. I recently built a real-time AI-powered application named Talentiv, and I am eager to bring similar problem-solving skills to your engineering department.\n\nPlease find my resume attached.\n\nBest regards,\nAjinkya Kardile`;
     };
 
-    // Re-run template generation when a new lead is selected
-    useEffect(() => {
-        // Reset toggles to true for new leads
-        setUseRecruiterName(true);
-        setUseCompanyName(true);
-        setUseJobRole(true);
-
-        setTo(lead.email);
-        setSubject(generateSubject(true));
-        setBody(generateTemplate(true, true, true));
-    }, [lead]);
+    // State initialization uses the derived helpers directly because this
+    // component now fully resets when the 'key' prop changes in the parent.
+    const [to, setTo] = useState(lead.email);
+    const [subject, setSubject] = useState(generateSubject(true));
+    const [body, setBody] = useState(generateTemplate(true, true, true));
 
     // Handle toggle changes
     const handleNameToggle = (checked: boolean) => {
