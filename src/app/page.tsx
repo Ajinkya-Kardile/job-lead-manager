@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useState, useEffect} from 'react';
-import {Send, Loader2} from 'lucide-react';
+import {Send, Loader2, ServerCrash} from 'lucide-react';
 import {JobLead} from '@/types';
 import LeadQueue from '../components/LeadQueue';
 import JobDetails from '../components/JobDetails';
@@ -11,21 +11,24 @@ export default function JobApplicationManager() {
     const [leads, setLeads] = useState<JobLead[]>([]);
     const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // 1. Fetching Leads API
     useEffect(() => {
         const fetchLeads = async () => {
             try {
-                // Adjust the URL if your Spring Boot is running on a different port/host
                 const response = await fetch('http://localhost:8080/api/leads/pending');
                 if (response.ok) {
                     const data = await response.json();
                     setLeads(data);
+                    setError(null);
                 } else {
-                    console.error('Failed to fetch leads');
+                    setError(`Failed to fetch leads: HTTP ${response.status}`);
+                    console.error('Server returned an error.');
                 }
-            } catch (error) {
-                console.error('Error fetching leads:', error);
+            } catch (err) {
+                console.error('Error fetching leads:', err);
+                setError('Could not connect to the backend server. Is Spring Boot running?');
             } finally {
                 setIsLoading(false);
             }
@@ -38,10 +41,24 @@ export default function JobApplicationManager() {
     const activeLeadId = selectedLeadId ?? (pendingLeads.length > 0 ? pendingLeads[0].id : null);
     const selectedLead = leads.find(l => l.id === activeLeadId) || null;
 
+    // Utility to determine the next lead to select after action
+    const selectNextLead = (currentLeadId: number) => {
+        const currentIndex = pendingLeads.findIndex(l => l.id === currentLeadId);
+        let nextLeadId = null;
+
+        if (currentIndex !== -1 && currentIndex + 1 < pendingLeads.length) {
+            nextLeadId = pendingLeads[currentIndex + 1].id;
+        } else {
+            const fallback = pendingLeads.find(l => l.id !== currentLeadId);
+            if (fallback) nextLeadId = fallback.id;
+        }
+
+        setSelectedLeadId(nextLeadId);
+    }
+
     // 2. Dispatching Application API
     const handleSendApplication = async (leadId: number, payload: { to: string, subject: string, body: string }) => {
         try {
-            // Dispatch payload to Spring Boot POST endpoint
             const response = await fetch('http://localhost:8080/api/leads/send', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -49,31 +66,72 @@ export default function JobApplicationManager() {
             });
 
             if (response.ok) {
-                const currentIndex = pendingLeads.findIndex(l => l.id === leadId);
-                let nextLeadId = null;
-
-                if (currentIndex !== -1 && currentIndex + 1 < pendingLeads.length) {
-                    nextLeadId = pendingLeads[currentIndex + 1].id;
-                } else {
-                    const fallback = pendingLeads.find(l => l.id !== leadId);
-                    if (fallback) nextLeadId = fallback.id;
-                }
-
-                // Optimistically update UI
+                selectNextLead(leadId);
+                // Mark as sent (0)
                 setLeads(prev => prev.map(lead =>
                     lead.id === leadId ? {...lead, status: 0} : lead
                 ));
-
-                setSelectedLeadId(nextLeadId);
             } else {
-                console.error('Failed to send the application');
+                alert('Failed to send the application. Check backend logs.');
             }
-        } catch (error) {
-            console.error('Error sending the application:', error);
+        } catch (err) {
+            console.error('Error sending the application:', err);
+            alert('Network error while sending application.');
+        }
+    };
+
+    // 3. Rejecting Lead API
+    const handleRejectApplication = async (leadId: number) => {
+        try {
+            const response = await fetch('http://localhost:8080/api/leads/reject', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: leadId}) // Sending the ID to a reject endpoint
+            });
+
+            if (response.ok) {
+                selectNextLead(leadId);
+                // Mark as rejected (2)
+                setLeads(prev => prev.map(lead =>
+                    lead.id === leadId ? {...lead, status: 2} : lead
+                ));
+            } else {
+                alert('Failed to reject the lead. Check backend logs.');
+            }
+        } catch (err) {
+            console.error('Error rejecting the lead:', err);
+            alert('Network error while rejecting lead.');
         }
     };
 
     const glassPane = "bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-y-auto flex flex-col custom-scrollbar shadow-2xl";
+
+    // Error State UI
+    if (error) {
+        return (
+            <div
+                className="h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-red-400 gap-4 p-6 text-center">
+                <div className="bg-red-500/10 p-4 rounded-full mb-2">
+                    <ServerCrash size={48}/>
+                </div>
+                <h2 className="text-xl font-bold text-white">Connection Error</h2>
+                <p className="text-sm max-w-md leading-relaxed">{error}</p>
+                <div
+                    className="mt-4 text-xs text-gray-500 bg-white/5 p-4 rounded-xl border border-white/10 text-left space-y-2">
+                    <p><strong>Troubleshooting:</strong></p>
+                    <ul className="list-disc pl-4 space-y-1">
+                        <li>Ensure your Spring Boot backend is running on <code
+                            className="bg-black/30 px-1 py-0.5 rounded">localhost:8080</code>.
+                        </li>
+                        <li>Ensure your Spring Boot Controller has the <code
+                            className="bg-black/30 px-1 py-0.5 rounded">@CrossOrigin</code> annotation to allow requests
+                            from port 3000.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        );
+    }
 
     // Loading State UI
     if (isLoading) {
@@ -130,7 +188,12 @@ export default function JobApplicationManager() {
                     </div>
 
                     {selectedLead ? (
-                        <DraftEditor key={selectedLead.id} lead={selectedLead} onSend={handleSendApplication}/>
+                        <DraftEditor
+                            key={selectedLead.id}
+                            lead={selectedLead}
+                            onSend={handleSendApplication}
+                            onReject={handleRejectApplication}
+                        />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
                             <p>Awaiting selection...</p>
