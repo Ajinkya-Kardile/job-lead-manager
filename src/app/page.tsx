@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2 } from 'lucide-react';
+import { Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2, User } from 'lucide-react';
 
 // --- Data Models ---
 interface JobLead {
@@ -186,9 +186,19 @@ export default function JobApplicationManager() {
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-white mb-2">{selectedLead.role}</h2>
                                 <p className="text-lg text-indigo-400">{selectedLead.company !== 'Unknown' ? selectedLead.company : 'Confidential Company'}</p>
-                                <div className="flex gap-4 mt-4 text-sm text-gray-400">
-                                    <span className="bg-white/5 px-2 py-1 rounded-md border border-white/5">{selectedLead.location}</span>
-                                    <span className="bg-white/5 px-2 py-1 rounded-md border border-white/5">Posted: {selectedLead.postedAt}</span>
+                                <div className="flex flex-wrap gap-3 mt-4 text-sm text-gray-400">
+                  <span className="bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                    <User size={14} className="text-gray-500" />
+                      {selectedLead.name && selectedLead.name !== 'Unknown' ? selectedLead.name : 'Hiring Team'}
+                  </span>
+                                    <span className="bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                    <MapPin size={14} className="text-gray-500" />
+                                        {selectedLead.location}
+                  </span>
+                                    <span className="bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                    <Clock size={14} className="text-gray-500" />
+                    Posted: {selectedLead.postedAt}
+                  </span>
                                 </div>
                             </div>
 
