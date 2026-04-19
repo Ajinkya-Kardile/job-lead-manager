@@ -1,7 +1,7 @@
 'use client';
 
-import React, {useState, useEffect} from 'react';
-import {Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Briefcase, MapPin, Clock, Send, Inbox, Building, Loader2, CheckCircle2 } from 'lucide-react';
 
 // --- Data Models ---
 interface JobLead {
@@ -87,7 +87,7 @@ export default function JobApplicationManager() {
     const handleSendApplication = (leadId: number) => {
         // In real app: POST /api/leads/send -> then update UI
         setLeads(prev => prev.map(lead =>
-            lead.id === leadId ? {...lead, status: 0} : lead
+            lead.id === leadId ? { ...lead, status: 0 } : lead
         ));
         setSelectedLeadId(null); // Clear selection after sending
     };
@@ -103,11 +103,10 @@ export default function JobApplicationManager() {
       `}</style>
 
             {/* --- Header --- */}
-            <header
-                className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-4 px-6 flex justify-between items-center shadow-lg shrink-0">
+            <header className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-4 px-6 flex justify-between items-center shadow-lg shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400">
-                        <Send size={24}/>
+                        <Send size={24} />
                     </div>
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight text-white">Application Manager</h1>
@@ -128,7 +127,7 @@ export default function JobApplicationManager() {
                 {/* PANE 1: Lead Queue (Left) */}
                 <aside className={`lg:col-span-3 ${glassPane}`}>
                     <div className="flex items-center gap-2 mb-4 shrink-0 px-1">
-                        <Inbox size={18} className="text-gray-400"/>
+                        <Inbox size={18} className="text-gray-400" />
                         <h2 className="text-sm font-semibold tracking-wider text-gray-400 uppercase">Lead Queue</h2>
                     </div>
 
@@ -145,23 +144,23 @@ export default function JobApplicationManager() {
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className={`font-semibold ${lead.status === 0 ? 'text-gray-500' : 'text-gray-100'} line-clamp-1`}>
-                                        {lead.company !== 'Unknown' ? lead.company : 'Confidential'}
+                                        {lead.role}
                                     </h3>
                                     {lead.status === 0 && (
-                                        <CheckCircle2 size={16} className="text-emerald-500 shrink-0"/>
+                                        <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
                                     )}
                                 </div>
 
                                 <p className="text-sm text-indigo-300 font-medium mb-3 line-clamp-1 flex items-center gap-1.5">
-                                    <Briefcase size={14}/> {lead.role}
+                                    <Building size={14} /> {lead.company !== 'Unknown' ? lead.company : 'Confidential'}
                                 </p>
 
                                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
-                    <MapPin size={12}/> {lead.location}
+                    <MapPin size={12} /> {lead.location}
                   </span>
                                     <span className="flex items-center gap-1">
-                    <Clock size={12}/> {lead.postedAt.split(' ')[1]}
+                    <Clock size={12} /> {lead.postedAt.split(' ')[1]}
                   </span>
                                 </div>
                             </div>
@@ -178,7 +177,7 @@ export default function JobApplicationManager() {
                 {/* PANE 2: Job Details (Middle) */}
                 <section className={`lg:col-span-4 ${glassPane} hidden lg:flex`}>
                     <div className="flex items-center gap-2 mb-4 shrink-0 px-1 border-b border-white/10 pb-4">
-                        <Building size={18} className="text-gray-400"/>
+                        <Building size={18} className="text-gray-400" />
                         <h2 className="text-sm font-semibold tracking-wider text-gray-400 uppercase">Post Details</h2>
                     </div>
 
@@ -188,10 +187,8 @@ export default function JobApplicationManager() {
                                 <h2 className="text-2xl font-bold text-white mb-2">{selectedLead.role}</h2>
                                 <p className="text-lg text-indigo-400">{selectedLead.company !== 'Unknown' ? selectedLead.company : 'Confidential Company'}</p>
                                 <div className="flex gap-4 mt-4 text-sm text-gray-400">
-                                    <span
-                                        className="bg-white/5 px-2 py-1 rounded-md border border-white/5">{selectedLead.location}</span>
-                                    <span
-                                        className="bg-white/5 px-2 py-1 rounded-md border border-white/5">Posted: {selectedLead.postedAt}</span>
+                                    <span className="bg-white/5 px-2 py-1 rounded-md border border-white/5">{selectedLead.location}</span>
+                                    <span className="bg-white/5 px-2 py-1 rounded-md border border-white/5">Posted: {selectedLead.postedAt}</span>
                                 </div>
                             </div>
 
@@ -201,7 +198,7 @@ export default function JobApplicationManager() {
                         </div>
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
-                            <Inbox size={48} className="mb-4"/>
+                            <Inbox size={48} className="mb-4" />
                             <p>Select a pending lead to view details.</p>
                         </div>
                     )}
@@ -210,13 +207,12 @@ export default function JobApplicationManager() {
                 {/* PANE 3: Draft Application Editor (Right) */}
                 <section className={`lg:col-span-5 ${glassPane}`}>
                     <div className="flex items-center gap-2 mb-4 shrink-0 px-1 border-b border-white/10 pb-4">
-                        <Send size={18} className="text-gray-400"/>
-                        <h2 className="text-sm font-semibold tracking-wider text-gray-400 uppercase">Draft
-                            Application</h2>
+                        <Send size={18} className="text-gray-400" />
+                        <h2 className="text-sm font-semibold tracking-wider text-gray-400 uppercase">Draft Application</h2>
                     </div>
 
                     {selectedLead ? (
-                        <DraftEditor lead={selectedLead} onSend={handleSendApplication}/>
+                        <DraftEditor lead={selectedLead} onSend={handleSendApplication} />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
                             <p>Awaiting selection...</p>
@@ -230,7 +226,7 @@ export default function JobApplicationManager() {
 }
 
 // --- Sub-Component: Email Draft Editor ---
-function DraftEditor({lead, onSend}: { lead: JobLead; onSend: (id: number) => void }) {
+function DraftEditor({ lead, onSend }: { lead: JobLead; onSend: (id: number) => void }) {
     const [to, setTo] = useState('');
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
@@ -264,13 +260,11 @@ function DraftEditor({lead, onSend}: { lead: JobLead; onSend: (id: number) => vo
             <div className="space-y-3 shrink-0">
                 <div className="flex items-center">
                     <label className="w-16 text-xs font-semibold text-gray-400 uppercase tracking-wider">To</label>
-                    <input type="email" value={to} onChange={e => setTo(e.target.value)} className={inputClass}
-                           placeholder="hr@company.com"/>
+                    <input type="email" value={to} onChange={e => setTo(e.target.value)} className={inputClass} placeholder="hr@company.com" />
                 </div>
                 <div className="flex items-center">
                     <label className="w-16 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sub</label>
-                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={inputClass}
-                           placeholder="Application Subject"/>
+                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={inputClass} placeholder="Application Subject" />
                 </div>
             </div>
 
@@ -294,7 +288,7 @@ function DraftEditor({lead, onSend}: { lead: JobLead; onSend: (id: number) => vo
                     disabled={isSending}
                     className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20"
                 >
-                    {isSending ? <Loader2 size={16} className="animate-spin"/> : <Send size={16}/>}
+                    {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     {isSending ? 'Sending...' : 'Send Application'}
                 </button>
             </div>
